@@ -5,6 +5,8 @@ Creates a map of dependencies between csproj project files inside a given direct
 
 The generated map is a dgml file, natively supported by all versions of Visual Studio so you can zoom and arrange till your hearts content.
 
+![Sample Dependency Graph](/docs/mmbot.dependencies.png\?raw=true "Sample Dependency Graph")
+
 ## Getting Started
 From this github repo go to the [releases section](https://github.com/PeteGoo/ProjectDependencyVisualiser/releases) and download the latest release. Unzip to a folder and run as below.
 
