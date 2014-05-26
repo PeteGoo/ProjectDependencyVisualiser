@@ -15,16 +15,16 @@ From this github repo go to the [releases section](https://github.com/PeteGoo/Pr
 Generate a dgml file by looking in the folder c:\mycode for csproj files
 
 ```
-.\ProjectReferenceDGMLGenerator.exe -O c:\temp\temp.dgml -R c:\mycode
+.\ProjectDependencyVisualiser.exe -O c:\temp\temp.dgml -R c:\mycode
 ```
 
 Same as above but ignoring Test projects
 ```
-.\ProjectReferenceDGMLGenerator.exe -O c:\temp\temp.dgml -R c:\mycode -E "*.Test.*.csproj,*.Tests.*.csproj"
+.\ProjectDependencyVisualiser.exe -O c:\temp\temp.dgml -R c:\mycode -E "*.Test.*.csproj,*.Tests.*.csproj"
 ```
 
 ```
-Usage: ProjectReferenceDGMLGenerator options
+Usage: ProjectDependencyVisualiser options
 
    OPTION                 TYPE      DESCRIPTION
    -Help (-H)             switch    Shows the help documentation
@@ -33,7 +33,7 @@ Usage: ProjectReferenceDGMLGenerator options
    -IncludeFilters (-I)   string    A list of comma separated path filter patterns to include [default=]
    -RootFolder (-R)       string    The path to search for projects. Uses current path if not supplied
 
-   EXAMPLE: ProjectReferenceDGMLGenerator.exe -O c:\temp\temp.dgml -R x:\ReleaseRoot -E "*.Test*.csproj, *.Tests*.csproj"
+   EXAMPLE: ProjectDependencyVisualiser.exe -O c:\temp\temp.dgml -R x:\ReleaseRoot -E "*.Test*.csproj, *.Tests*.csproj"
    Maps all the references in projects under the ReleaseRoot folder that are not tests and outputs to test.dgml
 
 ```
