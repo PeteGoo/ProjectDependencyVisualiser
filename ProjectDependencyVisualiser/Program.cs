@@ -39,7 +39,9 @@ namespace ProjectDependencyVisualiser
                 throw new DirectoryNotFoundException(startingFolder);
             }
 
-            var projectFiles = Directory.GetFiles(startingFolder, "*.csproj", SearchOption.AllDirectories);
+            var projectFiles = Directory.GetFiles(startingFolder, "*.csproj", SearchOption.AllDirectories)
+                .Concat(Directory.GetFiles(startingFolder, "*.vbproj", SearchOption.AllDirectories))
+                .Concat(Directory.GetFiles(startingFolder, "*.vcxproj", SearchOption.AllDirectories));
 
             var excludeFilters = (arguments.ExcludeFilters ?? string.Empty).Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToArray();
             var includeFilters = (arguments.IncludeFilters ?? string.Empty).Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToArray();
@@ -58,16 +60,21 @@ namespace ProjectDependencyVisualiser
                 let xdoc = XDocument.Load(projectFilePath)
                 let idElement = xdoc.Descendants(XName.Get("ProjectGuid", MsBuildNamespace)).FirstOrDefault()
                 let nameElement = xdoc.Descendants(XName.Get("AssemblyName", MsBuildNamespace)).FirstOrDefault()
-                where idElement != null && nameElement != null
+                where idElement != null
                 select new
                 {
                     ProjectId = idElement.Value,
-                    Name = nameElement.Value,
+                    Name = nameElement == null ? Path.GetFileNameWithoutExtension(projectFilePath) : nameElement.Value,
                     References = GetProjectReferences(xdoc).ToArray()
                 }).ToArray();
 
+            foreach (var blankRef in references.SelectMany(r => r.References).Where(r => string.IsNullOrEmpty(r.Name)))
+            {
+                blankRef.Name = references.Where(r => r.ProjectId == blankRef.Identifier).Select(r => r.Name).FirstOrDefault();
+            }
+
             var allProjects = references.Select(r => r.Name)
-                .Concat(references.SelectMany(r => r.References)).Distinct().OrderBy(r => r).ToArray();
+                .Concat(references.SelectMany(r => r.References).Where(r => r.Name != null).Select(r => r.Name)).Distinct().OrderBy(r => r).ToArray();
 
             var dgmlNs = "http://schemas.microsoft.com/vs/2009/dgml";
 
@@ -91,19 +98,25 @@ namespace ProjectDependencyVisualiser
                                                 from reference in project.References
                                                 select new XElement(XName.Get("Link", dgmlNs),
                                                     new XAttribute("Source", Array.IndexOf(allProjects, project.Name)),
-                                                    new XAttribute("Target", Array.IndexOf(allProjects, reference))));
+                                                    new XAttribute("Target", Array.IndexOf(allProjects, reference.Name))));
 
             outputXml.Save(arguments.OutputFile);
 
         }
 
-        private static IEnumerable<string> GetProjectReferences(XDocument projectFileDocument)
+        private static IEnumerable<ProjectIdentity> GetProjectReferences(XDocument projectFileDocument)
         {
             return
                 from projectReference in
                     projectFileDocument.Descendants(XName.Get("ProjectReference", MsBuildNamespace))
+                    let idElement = projectReference.Element(XName.Get("Project", MsBuildNamespace))
                     let nameElement = projectReference.Element(XName.Get("Name", MsBuildNamespace))
-                    select nameElement.Value;
+                    where idElement != null
+                    select new ProjectIdentity(
+                        idElement.Value, 
+                        nameElement == null 
+                            ? Path.GetFileNameWithoutExtension(projectReference.Attribute("Include") .Value) 
+                            : nameElement.Value);
 
         }
 
